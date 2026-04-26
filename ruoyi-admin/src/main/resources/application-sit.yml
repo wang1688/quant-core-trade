@@ -59,3 +59,8 @@ spring:
                 wall:
                     config:
                         multi-statement-allow: true
+# OKX API 配置
+okx:
+    api-key: your-api-key
+    secret-key: your-secret-key
+    passphrase: your-passphrase

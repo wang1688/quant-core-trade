@@ -2,6 +2,8 @@ package com.ruoyi.web.okx;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.InetSocketAddress;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -15,7 +17,11 @@ public class OkxApiClient {
     private final String apiKey;
     private final String secretKey;
     private final String passphrase;
-    private final HttpClient httpClient = HttpClient.newHttpClient();
+
+
+    private final HttpClient httpClient = HttpClient.newBuilder()
+            .proxy(ProxySelector.of(new InetSocketAddress("127.0.0.1", 7890))) // 改成你自己的代理端口
+            .build();
 
     public OkxApiClient(String apiKey, String secretKey, String passphrase) {
         this.apiKey = apiKey;
@@ -32,7 +38,7 @@ public class OkxApiClient {
     }
 
     private String get(String path) throws Exception {
-        String timestamp = Instant.now().toString();
+        String timestamp = Instant.now().toString().replaceAll("\\.\\d+", "");
         // 签名只用纯路径（不含query string以外的部分），OKX要求带query
         String sign = sign(timestamp, "GET", path, "");
 

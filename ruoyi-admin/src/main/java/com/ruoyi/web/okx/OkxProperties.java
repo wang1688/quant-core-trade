@@ -11,6 +11,8 @@ public class OkxProperties {
     private String secretKey;
     private String passphrase;
 
+    private boolean simulated;
+
     public String getApiKey() { return apiKey; }
     public void setApiKey(String apiKey) { this.apiKey = apiKey; }
 
@@ -19,4 +21,12 @@ public class OkxProperties {
 
     public String getPassphrase() { return passphrase; }
     public void setPassphrase(String passphrase) { this.passphrase = passphrase; }
+
+    public boolean isSimulated() {
+        return simulated;
+    }
+
+    public void setSimulated(boolean simulated) {
+        this.simulated = simulated;
+    }
 }

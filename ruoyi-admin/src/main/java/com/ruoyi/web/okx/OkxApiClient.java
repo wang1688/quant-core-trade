@@ -1841,6 +1841,476 @@ public class OkxApiClient {
         return doGet("/api/v5/public/platform-switch");
     }
 
+
+    // ========================== 【账户剩余/海外机构专属 补充12个】 ==========================
+    /**
+     * 1. 统一账户资产估值（海外）
+     */
+    public String getAssetValuation(String ccy) throws Exception {
+        String path = "/api/v5/account/asset-valuation";
+        if(ccy != null){
+            path += "?ccy=" + ccy;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 2. 账户固定估值信息
+     */
+    public String getFixedValuation() throws Exception {
+        return doGet("/api/v5/account/fixed-valuation");
+    }
+
+    /**
+     * 3. 风险状态详情
+     */
+    public String getRiskState() throws Exception {
+        return doGet("/api/v5/account/risk-state");
+    }
+
+    /**
+     * 4. 设置自动借币（海外机构）
+     */
+    public String setAutoLoan(String autoLoan) throws Exception {
+        String body = String.format("{\"autoLoan\":\"%s\"}",autoLoan);
+        return doPost("/api/v5/account/set-auto-loan",body);
+    }
+
+
+
+    /**
+     * 6. 子账户汇总持仓（海外专属）
+     */
+    public String getSubAccountPosition(String instType) throws Exception {
+        String path = "/api/v5/account/subaccount-positions";
+        if(instType != null){
+            path += "?instType=" + instType;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 7. 账户内部划转（海外）
+     */
+    public String innerTransfer(String from, String to, String ccy, String amt) throws Exception {
+        String body = String.format("{\"from\":\"%s\",\"to\":\"%s\",\"ccy\":\"%s\",\"amt\":\"%s\"}",from,to,ccy,amt);
+        return doPost("/api/v5/account/transfer",body);
+    }
+
+    /**
+     * 8. 划转订单状态查询
+     */
+    public String getTransferState(String transferId) throws Exception {
+        return doGet("/api/v5/account/transfer-state?transferId="+transferId);
+    }
+
+    /**
+     * 9. 计息明细记录
+     */
+    public String getInterestAccrued(String ccy) throws Exception {
+        String path = "/api/v5/account/interest-accrued";
+        if(ccy != null){
+            path += "?ccy=" + ccy;
+        }
+        return doGet(path);
+    }
+
+
+    /**
+     * 11. 手动借币下单
+     */
+    public String accountBorrow(String ccy, String amt) throws Exception {
+        String body = String.format("{\"ccy\":\"%s\",\"amt\":\"%s\"}",ccy,amt);
+        return doPost("/api/v5/account/borrow",body);
+    }
+
+    /**
+     * 12. 手动归还借币
+     */
+    public String accountRepay(String ccy, String amt) throws Exception {
+        String body = String.format("{\"ccy\":\"%s\",\"amt\":\"%s\"}",ccy,amt);
+        return doPost("/api/v5/account/repay",body);
+    }
+
+// ========================== 【交易剩余/海外兑换/批量高级 补充11个】 ==========================
+    /**
+     * 1. 批量改单
+     */
+    public String amendBatchOrders(String bodyJson) throws Exception {
+        return doPost("/api/v5/trade/amend-batch-orders",bodyJson);
+    }
+
+    /**
+     * 2. 一键平仓持仓
+     */
+    public String closePositions(String instId, String posSide) throws Exception {
+        String body = String.format("{\"instId\":\"%s\",\"posSide\":\"%s\"}",instId,posSide);
+        return doPost("/api/v5/trade/close-positions",body);
+    }
+
+    /**
+     * 3. 批量撤销策略单
+     */
+    public String cancelAlgoList(String bodyJson) throws Exception {
+        return doPost("/api/v5/trade/cancel-algos",bodyJson);
+    }
+
+    /**
+     * 4. 一键快捷兑换（海外专属）
+     */
+    public String easyConvert(String fromCcy, String toCcy, String amt) throws Exception {
+        String body = String.format("{\"fromCcy\":\"%s\",\"toCcy\":\"%s\",\"amt\":\"%s\"}",fromCcy,toCcy,amt);
+        return doPost("/api/v5/trade/easy-convert",body);
+    }
+
+    /**
+     * 5. 快捷兑换历史（海外）
+     */
+    public String getEasyConvertHistory(String ccy) throws Exception {
+        String path = "/api/v5/trade/easy-convert-history";
+        if(ccy != null){
+            path += "?ccy=" + ccy;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 6. 撤销快捷兑换订单（海外）
+     */
+    public String cancelConvert(String convertId) throws Exception {
+        String body = String.format("{\"convertId\":\"%s\"}",convertId);
+        return doPost("/api/v5/trade/convert-cancel",body);
+    }
+
+    /**
+     * 7. 获取兑换报价（海外）
+     */
+    public String getConvertQuote(String fromCcy, String toCcy, String amt) throws Exception {
+        return doGet(String.format("/api/v5/trade/convert-quote?fromCcy=%s&toCcy=%s&amt=%s",fromCcy,toCcy,amt));
+    }
+
+    /**
+     * 8. 订单详情查询
+     */
+    public String getOrderDetail(String ordId) throws Exception {
+        return doGet("/api/v5/trade/order?ordId="+ordId);
+    }
+
+    /**
+     * 9. 7天内成交明细
+     */
+    public String getFillsDetail(String instId) throws Exception {
+        String path = "/api/v5/trade/fills";
+        if(instId != null){
+            path += "?instId=" + instId;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 10. 历史成交归档全量
+     */
+    public String getFillsArchive(String instId) throws Exception {
+        String path = "/api/v5/trade/fills-history";
+        if(instId != null){
+            path += "?instId=" + instId;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 11. 历史持仓查询
+     */
+    public String getPositionHistory(String instType) throws Exception {
+        String path = "/api/v5/account/positions-history";
+        if(instType != null){
+            path += "?instType=" + instType;
+        }
+        return doGet(path);
+    }
+
+// ========================== 【行情全量剩余/海外高频/期权指数 补充13个】 ==========================
+    /**
+     * 1. 全量深度盘口（海外高频）
+     */
+    public String getBooksFull(String instId) throws Exception {
+        return doGet("/api/v5/market/books-full?instId="+instId);
+    }
+
+    /**
+     * 2. 历史K线全量
+     */
+    public String getHistoryCandles(String instId, String bar) throws Exception {
+        String path = "/api/v5/market/history-candles?instId="+instId;
+        if(bar != null){
+            path += "&bar="+bar;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 3. 历史成交记录
+     */
+    public String getHistoryTrades(String instId) throws Exception {
+        return doGet("/api/v5/market/history-trades?instId="+instId);
+    }
+
+    /**
+     * 4. 指数K线行情
+     */
+    public String getIndexCandles(String index, String bar) throws Exception {
+        String path = "/api/v5/market/index-candles?index="+index;
+        if(bar != null){
+            path += "&bar="+bar;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 5. 指数行情列表
+     */
+    public String getIndexTickers(String quoteCcy) throws Exception {
+        String path = "/api/v5/market/index-tickers";
+        if(quoteCcy != null){
+            path += "?quoteCcy=" + quoteCcy;
+        }
+        return doGet(path);
+    }
+
+    /**
+     * 6. 平台24小时成交额
+     */
+    public String getPlatform24Volume() throws Exception {
+        return doGet("/api/v5/market/platform-24-volume");
+    }
+
+    /**
+     * 7. 简化盘口深度（海外）
+     */
+    public String getOrderBookLite(String instId) throws Exception {
+        return doGet("/api/v5/market/order-book?instId="+instId);
+    }
+
+    /**
+     * 8. 期权产品列表（海外）
+     */
+    public String getOptionInstruments(String underlying) throws Exception {
+        return doGet("/api/v5/market/option/instruments?underlying="+underlying);
+    }
+
+    /**
+     * 9. 期权市场汇总（海外）
+     */
+    public String getOptionSummary(String underlying) throws Exception {
+        return doGet("/api/v5/market/option/summary?underlying="+underlying);
+    }
+
+
+
+
+    /**
+     * 12. 限价范围
+     */
+    public String getPriceLimit(String instId) throws Exception {
+        return doGet("/api/v5/market/price-limit?instId="+instId);
+    }
+
+    /**
+     * 13. 合约公共利率
+     */
+    public String getInterestRate() throws Exception {
+        return doGet("/api/v5/market/interest-rate");
+    }
+
+// ========================== 【公共/资产/链上/挖矿 海外全量剩余 26个】 ==========================
+
+
+    /**
+     * 2. 充值地址列表
+     */
+    public String getDepositAddressList(String ccy) throws Exception {
+        return doGet("/api/v5/asset/deposit-address-list?ccy="+ccy);
+    }
+
+    /**
+     * 3. 充值记录全量
+     */
+    public String getDepositHistory(String ccy, String state) throws Exception {
+        String path = "/api/v5/asset/deposit-history";
+        if(ccy != null) path += "?ccy="+ccy;
+        if(state != null) path += "&state="+state;
+        return doGet(path);
+    }
+
+
+
+    /**
+     * 5. 提币记录
+     */
+    public String getWithdrawHistory(String ccy, String state) throws Exception {
+        String path = "/api/v5/asset/withdraw-history";
+        if(ccy != null) path += "?ccy="+ccy;
+        if(state != null) path += "&state="+state;
+        return doGet(path);
+    }
+
+    /**
+     * 6. 取消提币
+     */
+    public String cancelWithdraw(String wdId) throws Exception {
+        String body = String.format("{\"wdId\":\"%s\"}",wdId);
+        return doPost("/api/v5/asset/cancel-withdraw",body);
+    }
+
+    /**
+     * 7. 内部转账免手续费（海外）
+     */
+    public String innerTransferFree(String uid, String ccy, String amt) throws Exception {
+        String body = String.format("{\"uid\":\"%s\",\"ccy\":\"%s\",\"amt\":\"%s\"}",uid,ccy,amt);
+        return doPost("/api/v5/asset/inner-transfer",body);
+    }
+
+    /**
+     * 8. 币种基础信息
+     */
+    public String getCcyInfo(String ccy) throws Exception {
+        String path = "/api/v5/asset/ccy-info";
+        if(ccy != null) path += "?ccy="+ccy;
+        return doGet(path);
+    }
+
+    /**
+     * 9. 多链配置信息
+     */
+    public String getChainConfig(String ccy) throws Exception {
+        String path = "/api/v5/asset/chain-config";
+        if(ccy != null) path += "?ccy="+ccy;
+        return doGet(path);
+    }
+
+    /**
+     * 10. 小额资产兑换
+     */
+    public String dustConvert() throws Exception {
+        return doPost("/api/v5/asset/dust-convert","{}");
+    }
+
+    /**
+     * 11. 钱包账单流水
+     */
+    public String getAssetBills(String ccy, String type) throws Exception {
+        String path = "/api/v5/asset/bills";
+        if(ccy != null) path += "?ccy="+ccy;
+        if(type != null) path += "&type="+type;
+        return doGet(path);
+    }
+
+    /**
+     * 12. 红包发放（海外地区）
+     */
+    public String sendRedPacket(String ccy, String amt) throws Exception {
+        String body = String.format("{\"ccy\":\"%s\",\"amt\":\"%s\"}",ccy,amt);
+        return doPost("/api/v5/asset/red-packet/send",body);
+    }
+
+    /**
+     * 13. 红包记录查询
+     */
+    public String getRedPacketHistory() throws Exception {
+        return doGet("/api/v5/asset/red-packet/history");
+    }
+
+    /**
+     * 14. 产品基础列表
+     */
+    public String getInstruments(String instType) throws Exception {
+        return doGet("/api/v5/public/instruments?instType="+instType);
+    }
+
+    /**
+     * 15. 交易费率档位
+     */
+    public String getFeeRateInfo(String instType) throws Exception {
+        return doGet("/api/v5/public/fee-rate?instType="+instType);
+    }
+
+    /**
+     * 16. 杠杆借贷利率公共
+     */
+    public String getPublicInterestRate() throws Exception {
+        return doGet("/api/v5/public/interest-rate");
+    }
+
+    /**
+     * 17. 爆仓订单公共
+     */
+    public String getLiquidationOrders(String instType) throws Exception {
+        return doGet("/api/v5/public/liquidation-orders?instType="+instType);
+    }
+
+    /**
+     * 18. 理财产品公共
+     */
+    public String getPublicEarnProduct() throws Exception {
+        return doGet("/api/v5/public/earn-product");
+    }
+
+    /**
+     * 19. 质押挖矿公共
+     */
+    public String getPublicStakeProduct() throws Exception {
+        return doGet("/api/v5/public/stake-product");
+    }
+
+    /**
+     * 20. 全网算力挖矿（海外）
+     */
+    public String getMiningPower() throws Exception {
+        return doGet("/api/v5/mining/power");
+    }
+
+    /**
+     * 21. 挖矿收益记录
+     */
+    public String getMiningEarnHistory() throws Exception {
+        return doGet("/api/v5/mining/earn-history");
+    }
+
+    /**
+     * 22. 矿机资产明细
+     */
+    public String getMiningAsset() throws Exception {
+        return doGet("/api/v5/mining/asset");
+    }
+
+    /**
+     * 23. 云算力订单
+     */
+    public String getCloudMiningOrder() throws Exception {
+        return doGet("/api/v5/mining/cloud-order");
+    }
+
+    /**
+     * 24. 邀请返利数据（海外）
+     */
+    public String getInviteData() throws Exception {
+        return doGet("/api/v5/affiliate/invite-data");
+    }
+
+    /**
+     * 25. 返利流水记录
+     */
+    public String getAffiliateCommission() throws Exception {
+        return doGet("/api/v5/affiliate/commission");
+    }
+
+    /**
+     * 26. 邀请榜单排名
+     */
+    public String getInviteRank() throws Exception {
+        return doGet("/api/v5/affiliate/rank");
+    }
+
     // ==================== 底层 POST 请求 ====================
     private String doPost(String path, String body) throws Exception {
         String timestamp = getTimestamp();

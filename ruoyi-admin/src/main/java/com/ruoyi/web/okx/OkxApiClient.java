@@ -48,6 +48,8 @@ public class OkxApiClient {
                 .header("OK-ACCESS-SIGN", sign)
                 .header("OK-ACCESS-TIMESTAMP", timestamp)
                 .header("OK-ACCESS-PASSPHRASE", passphrase)
+                // 模拟环境需要添加这个header，正式环境不需要
+                .header("x-simulated-trading", "1")
                 .header("Content-Type", "application/json")
                 .GET()
                 .build();

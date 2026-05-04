@@ -14,10 +14,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StrategyBackTestMain {
+
     // 回测配置
-    private static final String API_KEY = "你的OKX_API_KEY";
-    private static final String API_SECRET = "你的OKX_API_SECRET";
-    private static final String PASSPHRASE = "你的OKX_PASSPHRASE";
+    private static final String API_KEY = "api-key: 56fa6a8e-5bb0-4ae4-80f8-2227a038587a";
+    private static final String API_SECRET = "A80CCCC49227189F9442139DE57AEA57";
+    private static final String PASSPHRASE = "King$168$hello#168#";
     private static final boolean SIMULATED = true;
     private static final String INST_ID = "BTC-USDT-SWAP";
     private static final String BAR = "15m";

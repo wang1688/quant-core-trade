@@ -9,9 +9,9 @@ public class BackTestCalculator {
     private static final RoundingMode ROUND_MODE = RoundingMode.HALF_UP;
 
     /**
-     * 【修复】重载方法：传入资金曲线计算真实最大回撤
+     * 【新增】支持自定义无风险利率的计算方法
      */
-    public static BackTestResult calculate(List<BackTradeRecord> tradeList, List<BigDecimal> equityCurve) {
+    public static BackTestResult calculate(List<BackTradeRecord> tradeList, List<BigDecimal> equityCurve, double riskFreeRate) {
         BackTestResult result = new BackTestResult();
         int total = tradeList.size();
         result.setTotalTrades(total);
@@ -58,11 +58,11 @@ public class BackTestCalculator {
                 : BigDecimal.ZERO;
         result.setProfitLossRatio(profitLossRatio);
 
-        // 4. 【修复】基于连续资金曲线计算最大回撤
+        // 4. 基于连续资金曲线计算最大回撤
         BigDecimal maxDrawdown = calculateMaxDrawdown(equityCurve);
         result.setMaxDrawdown(maxDrawdown);
 
-        // 5. 夏普比率
+        // 5. 【修改】支持自定义无风险利率的夏普比率计算
         BigDecimal totalProfit = equityCurve.get(equityCurve.size() - 1);
         BigDecimal mean = totalProfit.divide(BigDecimal.valueOf(equityCurve.size()), SCALE, ROUND_MODE);
         BigDecimal variance = BigDecimal.ZERO;
@@ -77,8 +77,8 @@ public class BackTestCalculator {
             BigDecimal annualFactor = sqrt(BigDecimal.valueOf(252));
             BigDecimal annualReturn = mean.multiply(annualFactor);
             BigDecimal annualStd = std.multiply(annualFactor);
-            BigDecimal riskFreeRate = new BigDecimal("0.02");
-            sharpeRatio = annualReturn.subtract(riskFreeRate).divide(annualStd, 2, ROUND_MODE);
+            BigDecimal rf = BigDecimal.valueOf(riskFreeRate);
+            sharpeRatio = annualReturn.subtract(rf).divide(annualStd, 2, ROUND_MODE);
         }
         result.setSharpeRatio(sharpeRatio);
 
@@ -86,7 +86,7 @@ public class BackTestCalculator {
     }
 
     /**
-     * 【修复】基于连续资金曲线计算最大回撤的核心方法
+     * 基于连续资金曲线计算最大回撤的核心方法
      */
     private static BigDecimal calculateMaxDrawdown(List<BigDecimal> equityCurve) {
         if (equityCurve == null || equityCurve.isEmpty()) {
@@ -97,18 +97,15 @@ public class BackTestCalculator {
         BigDecimal maxDrawdown = BigDecimal.ZERO;
 
         for (BigDecimal equity : equityCurve) {
-            // 更新峰值
             if (equity.compareTo(peak) > 0) {
                 peak = equity;
             }
 
-            // 计算当前回撤
             if (peak.compareTo(BigDecimal.ZERO) > 0) {
                 BigDecimal drawdown = peak.subtract(equity)
                         .divide(peak, SCALE, ROUND_MODE)
                         .multiply(BigDecimal.valueOf(100));
 
-                // 更新最大回撤
                 if (drawdown.compareTo(maxDrawdown) > 0) {
                     maxDrawdown = drawdown;
                 }
@@ -118,11 +115,12 @@ public class BackTestCalculator {
         return maxDrawdown;
     }
 
-    /**
-     * 【保留】原有方法，向后兼容
-     */
+    // ==================== 保留原有方法，向后兼容 ====================
+    public static BackTestResult calculate(List<BackTradeRecord> tradeList, List<BigDecimal> equityCurve) {
+        return calculate(tradeList, equityCurve, 0.02);
+    }
+
     public static BackTestResult calculate(List<BackTradeRecord> tradeList) {
-        // 如果没有资金曲线，用交易记录模拟一个
         List<BigDecimal> equityCurve = new java.util.ArrayList<>();
         BigDecimal equity = BigDecimal.ZERO;
         equityCurve.add(equity);
@@ -130,7 +128,7 @@ public class BackTestCalculator {
             equity = equity.add(record.getProfitRate());
             equityCurve.add(equity);
         }
-        return calculate(tradeList, equityCurve);
+        return calculate(tradeList, equityCurve, 0.02);
     }
 
     private static BigDecimal sqrt(BigDecimal value) {

@@ -1,6 +1,7 @@
 package com.ruoyi.web.okx.vo;
 
 import lombok.Data;
+import java.math.BigDecimal;
 
 @Data
 public class KLineVO {

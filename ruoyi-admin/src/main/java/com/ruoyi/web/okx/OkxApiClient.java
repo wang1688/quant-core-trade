@@ -1,5 +1,10 @@
 package com.ruoyi.web.okx;
 
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
+import com.ruoyi.web.okx.vo.KLineVO;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.net.URI;
@@ -7,7 +12,10 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * OKX V5 API 客户端（单例模式）
@@ -40,6 +48,73 @@ public class OkxApiClient {
         this.passphrase = passphrase;
         this.simulated = simulated;
         this.httpClient = httpClient;
+    }
+
+    // ========================== 【新增：回测专用方法 完全复用原有逻辑】 ==========================
+    /**
+     * 【分页拉取全量历史K线】支持拉取2年及以上历史数据，自动分页、防限流
+     * @param instId 交易对 如 BTC-USDT-SWAP
+     * @param bar K线周期 1m/5m/15m/1H/4H/1D
+     * @param before 开始时间戳（毫秒） 传2年前的时间戳即可
+     * @param after 结束时间戳（毫秒） 传当前时间戳即可
+     * @return 原始API返回的JSON字符串
+     */
+    public String getHistoryCandlesPage(String instId, String bar, Long before, Long after) throws Exception {
+        StringBuilder path = new StringBuilder("/api/v5/market/history-candles?instId=" + instId);
+        if (bar != null) path.append("&bar=").append(bar);
+        if (before != null) path.append("&before=").append(before);
+        if (after != null) path.append("&after=").append(after);
+        path.append("&limit=100"); // 单页最大100条，OKX官方上限
+        return doGet(path.toString());
+    }
+
+    /**
+     * 【直接获取2年完整K线数组】一键拉取2年历史数据，自动分页、排序，直接适配你的KLineVO
+     * @param instId 交易对
+     * @param bar K线周期
+     * @return 按时间正序排列的KLineVO数组
+     */
+    public KLineVO[] getTwoYearsKLineArray(String instId, String bar) throws Exception {
+        long endTime = System.currentTimeMillis();
+        long startTime = endTime - 2L * 365 * 24 * 60 * 60 * 1000; // 2年前时间戳
+        List<KLineVO> kLineList = new ArrayList<>();
+        Long currentBefore = startTime;
+
+        while (currentBefore < endTime) {
+            // 复用你原有doGet请求
+            String json = getHistoryCandlesPage(instId, bar, currentBefore, endTime);
+            JSONObject jsonObject = JSON.parseObject(json);
+            if (!"0".equals(jsonObject.getString("code"))) {
+                throw new RuntimeException("OKX API拉取失败：" + jsonObject.getString("msg"));
+            }
+
+            JSONArray data = jsonObject.getJSONArray("data");
+            if (data.isEmpty()) break;
+
+            // 解析为你的KLineVO
+            for (int i = 0; i < data.size(); i++) {
+                JSONArray item = data.getJSONArray(i);
+                KLineVO vo = new KLineVO();
+                vo.setTimestamp(item.getLong(0));
+                vo.setOpen(item.getDouble(1));
+                vo.setHigh(item.getDouble(2));
+                vo.setLow(item.getDouble(3));
+                vo.setClose(item.getDouble(4));
+                vo.setVolume(item.getDouble(5));
+                kLineList.add(vo);
+            }
+
+            // 更新游标，取下一页
+            JSONArray lastItem = data.getJSONArray(data.size() - 1);
+            currentBefore = lastItem.getLong(0) + 1;
+
+            // 防OKX接口限流
+            Thread.sleep(100);
+        }
+
+        // 按时间正序排列（和你策略入参完全匹配）
+        Collections.reverse(kLineList);
+        return kLineList.toArray(new KLineVO[0]);
     }
 
     // ==================== 1. 获取账户余额 ====================

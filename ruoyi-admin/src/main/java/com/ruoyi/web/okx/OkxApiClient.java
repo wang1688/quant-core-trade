@@ -7,10 +7,14 @@ import com.ruoyi.web.okx.vo.KLineVO;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
+import java.net.InetSocketAddress;
+import java.net.Proxy;
+import java.net.ProxySelector;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -37,6 +41,37 @@ public class OkxApiClient {
 
     // 全局 HttpClient（单例，复用连接池）
     private final HttpClient httpClient;
+
+    /**
+     * 【修改：增加代理参数的构造方法】
+     * @param apiKey OKX API Key
+     * @param secretKey OKX API Secret
+     * @param passphrase OKX API Passphrase
+     * @param simulated 是否模拟盘
+     * @param httpClient 外部传入的HttpClient（可配置代理）
+     * @param proxyHost 代理主机地址（如 "127.0.0.1"，不需要代理传 null）
+     * @param proxyPort 代理端口（如 7890，不需要代理传 0）
+     */
+    public OkxApiClient(String apiKey, String secretKey, String passphrase,
+                        boolean simulated, HttpClient httpClient,
+                        String proxyHost, int proxyPort) {
+        this.apiKey = apiKey;
+        this.secretKey = secretKey;
+        this.passphrase = passphrase;
+        this.simulated = simulated;
+
+        // 如果传入了代理配置，使用带代理的HttpClient
+        if (proxyHost != null && !proxyHost.isBlank() && proxyPort > 0) {
+            Proxy proxy = new Proxy(Proxy.Type.HTTP, new InetSocketAddress(proxyHost, proxyPort));
+            this.httpClient = HttpClient.newBuilder()
+                    .proxy(ProxySelector.of(new InetSocketAddress(proxyHost, proxyPort)))
+                    .connectTimeout(Duration.ofSeconds(30))
+                    .build();
+        } else {
+            // 无代理，使用传入的或默认HttpClient
+            this.httpClient = httpClient != null ? httpClient : HttpClient.newHttpClient();
+        }
+    }
 
     /**
      * 构造方法（由 Spring @Bean 调用）

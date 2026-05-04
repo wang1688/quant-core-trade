@@ -14,9 +14,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class StrategyBackTestMain {
+    // ==================== 【新增：代理配置】解决接口不通问题 ====================
+    private static final boolean USE_PROXY = true; // 是否使用代理
+    private static final String PROXY_HOST = "127.0.0.1"; // 代理地址（如 Clash、V2Ray 等）
+    private static final int PROXY_PORT = 7890; // 代理端口（根据你本地代理软件设置）
 
     // 回测配置
-    private static final String API_KEY = "api-key: 56fa6a8e-5bb0-4ae4-80f8-2227a038587a";
+    private static final String API_KEY = "56fa6a8e-5bb0-4ae4-80f8-2227a038587a";
     private static final String API_SECRET = "A80CCCC49227189F9442139DE57AEA57";
     private static final String PASSPHRASE = "King$168$hello#168#";
     private static final boolean SIMULATED = true;
@@ -24,16 +28,27 @@ public class StrategyBackTestMain {
     private static final String BAR = "15m";
 
     public static void main(String[] args) throws Exception {
-        // 1. 初始化你原始的OkxApiClient
+        // 1. 初始化带代理的 OkxApiClient
         HttpClient httpClient = HttpClient.newHttpClient();
-        OkxApiClient okxClient = new OkxApiClient(API_KEY, API_SECRET, PASSPHRASE, SIMULATED, httpClient);
+        OkxApiClient okxClient;
+        
+        if (USE_PROXY) {
+            System.out.println("正在使用代理连接 OKX：" + PROXY_HOST + ":" + PROXY_PORT);
+            okxClient = new OkxApiClient(
+                    API_KEY, API_SECRET, PASSPHRASE, SIMULATED, httpClient,
+                    PROXY_HOST, PROXY_PORT
+            );
+        } else {
+            System.out.println("正在直连 OKX（无代理）");
+            okxClient = new OkxApiClient(API_KEY, API_SECRET, PASSPHRASE, SIMULATED, httpClient);
+        }
 
-        // 2. 拉取2年真实K线（完全匹配你的KLineVO）
+        // 2. 拉取2年真实K线
         System.out.println("正在从OKX接口拉取2年历史K线数据...");
         KLineVO[] kLineArray = okxClient.getTwoYearsKLineArray(INST_ID, BAR);
         System.out.println("K线数据拉取完成，共 " + kLineArray.length + " 根");
 
-        // 3. 初始化你的策略（直接替换成你任意策略）
+        // 3. 初始化策略
         TradeStrategy strategy = new TrendStrengthStrategy();
         System.out.println("正在执行策略回测：" + strategy.name());
 
@@ -47,7 +62,6 @@ public class StrategyBackTestMain {
             System.arraycopy(kLineArray, 0, currentKLine, 0, i + 1);
 
             int signal = strategy.signal(currentKLine, null, null);
-            // 从你的KLineVO取double，转BigDecimal计算
             BigDecimal currentClose = BigDecimal.valueOf(kLineArray[i].getClose());
 
             if (holdPosition == 0 && signal == 1) {

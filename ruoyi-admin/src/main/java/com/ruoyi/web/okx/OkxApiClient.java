@@ -308,6 +308,21 @@ public class OkxApiClient {
     }
 
     /**
+     * 下单（双向持仓模式，含 posSide）
+     * posSide: "long" | "short"，px 传 null 时使用市价单
+     */
+    public String placeOrderWithPosSide(String instId, String tdMode, String side,
+                                         String ordType, String sz, String px,
+                                         String posSide) throws Exception {
+        String pxField = (px != null && !px.isBlank()) ? "\"px\":\"" + px + "\"," : "";
+        String body = String.format(
+                "{\"instId\":\"%s\",\"tdMode\":\"%s\",\"side\":\"%s\",\"ordType\":\"%s\",%s\"sz\":\"%s\",\"posSide\":\"%s\"}",
+                instId, tdMode, side, ordType, pxField, sz, posSide
+        );
+        return doPost("/api/v5/trade/order", body);
+    }
+
+    /**
      * 2. 批量下单
      */
     public String batchOrders(String instId, String tdMode, String side, String ordType,

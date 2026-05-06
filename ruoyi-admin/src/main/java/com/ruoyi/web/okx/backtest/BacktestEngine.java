@@ -8,10 +8,14 @@ import lombok.Data;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * 单时间框架回测引擎（修复版）
+ * 修复：
+ *   1. 使用 KLineAligner 对齐 1H/4H 索引，避免时间错位
+ *   2. 补充 signal=0 时平仓逻辑
+ *   3. 强制平仓最后一笔未平仓位
+ */
 public class BacktestEngine {
-
-    private static final double INIT_MONEY = 10000.0;
-    private static final double RISK = 0.01;
 
     @Data
     @AllArgsConstructor
@@ -24,59 +28,64 @@ public class BacktestEngine {
         private double winRate;
     }
 
-    @Data
-    @AllArgsConstructor
-    static class Trade {
-        int direction;
-        boolean isWin;
-        double entryPrice;
-    }
-
     public Report test(TradeStrategy strategy, KLineVO[] k15m, KLineVO[] k1h, KLineVO[] k4h) {
-        List<Trade> trades = new ArrayList<>();
-        Trade current = null;
-        double money = INIT_MONEY;
-        double maxMoney = INIT_MONEY;
-        double maxDraw = 0;
+        // 预计算对齐索引
+        int[] align1h = (k1h != null && k1h.length > 0) ? KLineAligner.buildAlignTable(k15m, k1h) : null;
+        int[] align4h = (k4h != null && k4h.length > 0) ? KLineAligner.buildAlignTable(k15m, k4h) : null;
+
+        List<Boolean> results = new ArrayList<>();
+        int holdDir = 0;
+        double entryPrice = 0;
+        double money = 1.0;
+        double peakMoney = 1.0;
+        double maxDrawdown = 0;
 
         int n = k15m.length;
         for (int i = 60; i < n; i++) {
-            KLineVO c = k15m[i];
-            int sig = strategy.signal(
-                    slice(k15m, i, 100),
-                    slice(k1h, i, 60),
-                    slice(k4h, i, 30)
-            );
+            KLineVO[] s15m = slice(k15m, i, 100);
+            KLineVO[] s1h  = align1h != null ? KLineAligner.slice(k1h, align1h[i], 60) : null;
+            KLineVO[] s4h  = align4h != null ? KLineAligner.slice(k4h, align4h[i], 30) : null;
 
-            // 平仓逻辑
-            if (current != null && sig != 0 && sig != current.getDirection()) {
-                double p = current.getDirection() == 1
-                        ? (c.getClose() - current.getEntryPrice()) / current.getEntryPrice()
-                        : (current.getEntryPrice() - c.getClose()) / current.getEntryPrice();
+            int sig = strategy.signal(s15m, s1h, s4h);
+            double close = k15m[i].getClose();
 
-                money *= (1 + p);
-                maxMoney = Math.max(maxMoney, money);
-                double draw = (maxMoney - money) / maxMoney;
-                maxDraw = Math.max(maxDraw, draw);
-
-                trades.add(new Trade(current.getDirection(), p > 0, current.getEntryPrice()));
-                current = null;
+            // 平仓：信号反转或归零
+            if (holdDir != 0 && (sig == 0 || sig != holdDir)) {
+                double pnl = holdDir == 1
+                        ? (close - entryPrice) / entryPrice
+                        : (entryPrice - close) / entryPrice;
+                money *= (1 + pnl);
+                peakMoney = Math.max(peakMoney, money);
+                maxDrawdown = Math.max(maxDrawdown, (peakMoney - money) / peakMoney);
+                results.add(pnl > 0);
+                holdDir = 0;
             }
 
-            // 开仓逻辑
-            if (current == null && sig != 0) {
-                current = new Trade(sig, false, c.getClose());
+            // 开仓
+            if (holdDir == 0 && sig != 0) {
+                holdDir = sig;
+                entryPrice = close;
             }
         }
 
-        int total = trades.size();
-        int win = (int) trades.stream().filter(Trade::isWin).count();
-        double profit = (money - INIT_MONEY) / INIT_MONEY;
-        double winRate = total == 0 ? 0 : (double) win / total;
+        // 强制平仓最后一笔
+        if (holdDir != 0) {
+            double close = k15m[n - 1].getClose();
+            double pnl = holdDir == 1
+                    ? (close - entryPrice) / entryPrice
+                    : (entryPrice - close) / entryPrice;
+            money *= (1 + pnl);
+            results.add(pnl > 0);
+        }
 
+        int total = results.size();
+        int wins  = (int) results.stream().filter(b -> b).count();
         return new Report(
                 strategy.name(),
-                total, win, profit, maxDraw, winRate
+                total, wins,
+                money - 1.0,
+                maxDrawdown,
+                total == 0 ? 0 : (double) wins / total
         );
     }
 

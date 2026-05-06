@@ -64,3 +64,4 @@ okx:
     api-key: 56fa6a8e-5bb0-4ae4-80f8-2227a038587a
     secret-key: A80CCCC49227189F9442139DE57AEA57
     passphrase: 'King$168$hello#168#'
+    simulated: true

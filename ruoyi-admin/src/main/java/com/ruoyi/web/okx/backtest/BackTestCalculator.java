@@ -1,12 +1,26 @@
 package com.ruoyi.web.okx.backtest;
 
+
+
+
+
+
+//import org.apache.commons.math3.dfp.DfpField;
+
+
+
+import org.apache.commons.math3.dfp.DfpField;
+
 import java.math.BigDecimal;
-import java.math.RoundingMode;
+
 import java.util.List;
 
 public class BackTestCalculator {
     private static final int SCALE = 8;
-    private static final RoundingMode ROUND_MODE = RoundingMode.HALF_UP;
+
+
+    // 直接对应你原来的 HALF_UP 四舍五入
+    private static final int ROUND_MODE = BigDecimal.ROUND_HALF_UP;
 
     /**
      * 【新增】支持自定义无风险利率的计算方法

@@ -48,6 +48,29 @@ public class BacktestMain {
         result.printReport();
 
         printDetailedAnalysis(result);
+
+        PerformanceMetrics.printAllMetrics(result);
+
+        exportResults(result, symbol);
+    }
+
+    /**
+     * 导出结果
+     */
+    private static void exportResults(BacktestResult result, String symbol) {
+        String timestamp = java.time.LocalDateTime.now().format(
+            java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+        );
+
+        String baseDir = "backtest_results/" + symbol + "_" + timestamp + "/";
+        new java.io.File(baseDir).mkdirs();
+
+        BacktestExporter.exportTradesToCSV(result, baseDir + "trades.csv");
+        BacktestExporter.exportEquityCurve(result, baseDir + "equity_curve.csv");
+        BacktestExporter.exportFullReport(result, baseDir + "report.txt");
+        BacktestExporter.exportStrategyStats(result, baseDir + "strategy_stats.csv");
+
+        System.out.println("\n所有结果已导出到: " + baseDir);
     }
 
     /**
